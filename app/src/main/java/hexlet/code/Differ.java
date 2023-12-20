@@ -6,13 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Differ {
     public static String generate(String filepath1, String filepath2) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
 
         Path path1 = Paths.get(filepath1).toAbsolutePath().normalize();
         Path path2 = Paths.get(filepath2).toAbsolutePath().normalize();
@@ -37,13 +35,35 @@ public class Differ {
         mapAll.putAll(map1);
         mapAll.putAll(map2);
 
-        List<String> listDiff = new ArrayList<>();
+        List<Map<String, Object>> resultList = new ArrayList<>();
+        Set<String> keysSet = new TreeSet<>(map1.keySet());
 
-        for (Map.Entry<String, Object> entry : mapAll.entrySet()) {
-            String key = entry.getKey();
+        keysSet.addAll(map2.keySet());
 
-
+        for (String key : keysSet) {
+            Map<String, Object> temp = new LinkedHashMap<>();
+            if (map1.containsKey(key) && !map2.containsKey(key)) {
+                temp.put("key", key);
+                temp.put("value1", map1.get(key));
+                temp.put("status", "removed");
+            } else if (!map1.containsKey(key) && map2.containsKey(key)) {
+                temp.put("key", key);
+                temp.put("value2", map2.get(key));
+                temp.put("status", "added");
+            } else if (!Objects.equals(map1.get(key), map2.get(key))) {
+                temp.put("key", key);
+                temp.put("value1", map1.get(key));
+                temp.put("value2", map2.get(key));
+                temp.put("status", "updated");
+            } else {
+                temp.put("key", key);
+                temp.put("value1", map1.get(key));
+                temp.put("status", "unchanged");
+            }
+            resultList.add(temp);
         }
+        String result = objectMapper.writeValueAsString(resultList);
 
+        return result;
     }
 }
