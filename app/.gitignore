@@ -6,8 +6,6 @@ build
 
 **/logs/
 
-src/main/resources
-
 .settings
 bin
 .project*
